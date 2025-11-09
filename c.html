@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Encuesta con inicio, cuerda y música</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:linear-gradient(180deg,#e9f2ff,#fff);}
+
+    /* Pantalla de inicio */
+    #welcomeScreen{
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.5);
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      color:white; font-size:28px; z-index:10;
+    }
+    #welcomeScreen button{
+      margin-top:20px; padding:12px 25px; font-size:22px;
+      cursor:pointer; border:none; border-radius:10px; background:#3478f6; color:white;
+    }
+    #welcomeScreen button:hover{background:#275edc;}
+
+    .stage{display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding-top:20px; display:none;}
+
+    /* Cuerda y fotos */
+    .rope-wrap{position:relative;width:95%;max-width:1100px;height:400px;margin-bottom:30px;}
+    svg{width:100%;height:100%;position:absolute;top:0;left:0;}
+    .rope-line{fill:none;stroke:#7a4b2a;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.2));}
+    .photo{position:absolute;width:100px;height:100px;border-radius:10px;object-fit:cover;box-shadow:0 6px 16px rgba(0,0,0,0.2);transition:transform 0.1s, opacity 0.6s ease;opacity:0;}
+
+    /* Cuestionario */
+    .quiz{background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,0.1);width:90%;max-width:350px;text-align:center;}
+    .quiz h3{margin-bottom:10px;color:#18324a;font-size:22px;}
+    .quiz input[type=text]{width:90%;padding:6px;margin-top:6px;font-size:18px;}
+    .quiz button{margin-top:10px;padding:8px 15px;border:none;border-radius:8px;background:#3478f6;color:#fff;font-weight:bold;cursor:pointer;font-size:18px;}
+    .quiz button:hover{background:#275edc;}
+
+    /* Árbol y hojas */
+    #treeSection{display:none;position:relative;width:100%;height:400px;margin-top:20px;}
+    .tree{position:absolute;top:0;left:50%;transform:translateX(-50%);max-width:200px;z-index:2;}
+    .leaf{position:absolute;font-size:30px;z-index:3;text-shadow:1px 1px 3px rgba(144,238,144,0.6);pointer-events:none;}
+  </style>
+</head>
+<body>
+
+<!-- Pantalla de inicio -->
+<div id="welcomeScreen">
+  <div>¡Hola! Vamos a hacer una pequeña encuesta 😊</div>
+  <button onclick="startQuiz()">Siguiente</button>
+</div>
+
+<div class="stage" id="mainStage">
+
+  <!-- Cuerda con fotos -->
+  <div class="rope-wrap" id="ropeWrap">
+    <svg id="ropeSVG" preserveAspectRatio="none">
+      <path id="ropePath" class="rope-line" d="" />
+    </svg>
+
+    <img class="photo" id="photo1" src="ma1.jpg">
+    <img class="photo" id="photo2" src="ma5.jpg">
+    <img class="photo" id="photo3" src="ma3.jpg">
+    <img class="photo" id="photo4" src="ma4.jpg">
+    <img class="photo" id="photo5" src="ma2.jpg">
+  </div>
+
+  <!-- Cuestionario -->
+  <div class="quiz" id="quizBox">
+    <h3 id="questionText">Pregunta 1: ¿Cuántos años cumple hoy?</h3>
+    <input type="text" id="answerInput" placeholder="Escribe tu respuesta">
+    <br>
+    <button id="nextBtn">Responder</button>
+  </div>
+
+  <!-- Árbol y hojas -->
+  <div id="treeSection">
+    <img class="tree" src="arbolA.png" alt="Árbol">
+  </div>
+
+</div>
+
+<!-- Música -->
+<audio id="celebrationMusic" src="tu_musica.mp3" preload="auto"></audio>
+
+<script>
+  function startQuiz(){
+    document.getElementById('welcomeScreen').style.display='none';
+    document.getElementById('mainStage').style.display='flex';
+  }
+
+  const ropeWrap = document.getElementById('ropeWrap');
+  const ropeSVG = document.getElementById('ropeSVG');
+  const path = document.getElementById('ropePath');
+
+  let points = 100;
+  let amplitude = 45, wavelength = 600, speed = 0.08, time = 0;
+
+  const photos = [
+    { img: document.getElementById('photo1'), pos: 0.15 },
+    { img: document.getElementById('photo2'), pos: 0.35 },
+    { img: document.getElementById('photo3'), pos: 0.55 },
+    { img: document.getElementById('photo4'), pos: 0.75 },
+    { img: document.getElementById('photo5'), pos: 0.9 }
+  ];
+
+  const questions = [
+    "¿Cuántos años cumple hoy?",
+    "¿De qué departamento es?",
+    "¿De qué iglesia es?",
+    "Por curiosidad, ¿sus hijos son Yonathan y Abdiel?",
+    "¿Sabes quién es el creador de esta página?"
+  ];
+
+  let current = 0;
+  const questionText = document.getElementById("questionText");
+  const nextBtn = document.getElementById("nextBtn");
+  const answerInput = document.getElementById("answerInput");
+  const treeSection = document.getElementById("treeSection");
+  const music = document.getElementById("celebrationMusic");
+
+  nextBtn.addEventListener("click", () => {
+    if(answerInput.value.trim() === "") return alert("Responde algo 😊");
+    if(current < photos.length){
+      const x = photos[current].pos * ropeWrap.clientWidth;
+      const y = ropeWrap.clientHeight/2;
+      photos[current].img.style.opacity = 1;
+      photos[current].img.style.left = (x - 50) + 'px';
+      photos[current].img.style.top = (y + 20) + 'px';
+    }
+    current++;
+    if(current < questions.length){
+      questionText.textContent = `Pregunta ${current+1}: ${questions[current]}`;
+      answerInput.value = "";
+    } else {
+      document.getElementById("quizBox").innerHTML = `
+        <h2 style="font-size:32px; color:#18324a; text-align:center; line-height:1.3;">
+        ¡Feliz día, mamá!<br>
+        Gracias por tu amor incondicional,<br>
+        eres mi mayor inspiración ❤️
+        </h2>
+      `;
+      treeSection.style.display = "block";
+      startLeaves();
+      music.play();
+    }
+  });
+
+  function buildRopePath(t){
+    const width = ropeWrap.clientWidth;
+    const height = ropeWrap.clientHeight;
+    ropeSVG.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const seg = width / (points-1);
+    let d = '';
+    for(let i=0;i<points;i++){
+      const x = i*seg;
+      const baseY = height/2;
+      const edgeFactor = Math.sin((i/(points-1))*Math.PI);
+      const phase = (x/wavelength)*2*Math.PI;
+      const y = baseY + Math.sin(phase+t)*amplitude*edgeFactor;
+      d += i===0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+    }
+    return d;
+  }
+
+  function animate(){
+    time += speed;
+    path.setAttribute('d', buildRopePath(time));
+    const width = ropeWrap.clientWidth;
+    const height = ropeWrap.clientHeight;
+    photos.forEach((p,i)=>{
+      const x = p.pos*width;
+      const y = height/2 + Math.sin((x/wavelength)*2*Math.PI + time)*amplitude*Math.sin(Math.PI*x/width);
+      const angle = Math.sin(time + i)*5;
+      p.img.style.left = (x-50) + 'px';
+      p.img.style.top = (y+20) + 'px';
+      p.img.style.transform = `rotate(${angle}deg)`;
+    });
+    requestAnimationFrame(animate);
+  }
+
+  path.setAttribute('d', buildRopePath(time));
+  requestAnimationFrame(animate);
+
+  function startLeaves(){
+    const tree = document.querySelector('.tree');
+    function createLeaf(){
+      const leaf = document.createElement('div');
+      leaf.className='leaf';
+      leaf.textContent='🍃';
+      const rect = tree.getBoundingClientRect();
+      const startX = rect.left + Math.random()*rect.width;
+      const startY = rect.top;
+      leaf.style.left=startX+'px';
+      leaf.style.top=startY+'px';
+      const scale = 0.8 + Math.random()*0.4;
+      leaf.style.transform=`scale(${scale})`;
+      document.body.appendChild(leaf);
+      const duration = 5000 + Math.random()*3000;
+      const endY = window.innerHeight - 80;
+      const amplitude = 50 + Math.random()*50;
+      const startTime = performance.now();
+      function animateLeaf(timeNow){
+        const elapsed = timeNow-startTime;
+        const progress = Math.min(elapsed/duration,1);
+        const windOffset = progress*40;
+        leaf.style.top = startY + (endY-startY)*progress + 'px';
+        leaf.style.left = startX - windOffset + Math.sin(progress*Math.PI*2)*amplitude+'px';
+        leaf.style.transform = `rotate(${progress*360}deg) scale(${scale})`;
+        if(progress<1) requestAnimationFrame(animateLeaf);
+        else leaf.remove();
+      }
+      requestAnimationFrame(animateLeaf);
+    }
+    for(let i=0;i<3;i++) setTimeout(createLeaf,i*500);
+    setInterval(createLeaf,5000);
+  }
+
+  window.addEventListener('resize', ()=>{ path.setAttribute('d', buildRopePath(time)); });
+</script>
+
+</body>
+</html>
